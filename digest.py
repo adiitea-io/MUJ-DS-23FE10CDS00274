@@ -1,24 +1,24 @@
-# Security News Digest - the "engine" (Hugging Face version)
-# app.py imports these functions. You can still run this file on its own
-# for the terminal version:  python digest.py
+
 
 import os
 import re
 import time
 import feedparser
 from dotenv import load_dotenv
-from huggingface_hub import InferenceClient
+from groq import Groq
+from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-load_dotenv()                                            # loads HF_TOKEN from .env
-client = InferenceClient(api_key=os.getenv("HF_TOKEN"))  # connects to Hugging Face
+load_dotenv()                                           
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))  # connects to Groq
 
 MODELS = [
-    "meta-llama/Llama-3.1-8B-Instruct",   # main model
-    "Qwen/Qwen2.5-7B-Instruct",           # backup 1
-    "openai/gpt-oss-20b",                 # backup 2
+    "openai/gpt-oss-20b",        # main model
+    "openai/gpt-oss-120b",       # backup 1 (bigger, smarter)
+    "llama-3.1-8b-instant",      # backup 2 (small and fast)
 ]
+
 
 FEEDS = {
     "The Hacker News": "https://feeds.feedburner.com/TheHackersNews",
@@ -40,7 +40,7 @@ def fetch_articles():
     articles = []
     for source, url in FEEDS.items():
         feed = feedparser.parse(url)
-        for entry in feed.entries[:10]:
+        for entry in feed.entries[:5]:  # limit to 5 articles per source
             text = re.sub(r"<[^>]+>", " ", entry.get("summary", ""))
             text = re.sub(r"\s+", " ", text).strip()
             articles.append({
@@ -78,7 +78,7 @@ def ask_llm(messages):
         for model in MODELS:                      # try each model in turn
             try:
                 response = client.chat.completions.create(
-                    model=model, messages=messages, max_tokens=1000)
+                    model=model, messages=messages, max_tokens=4000)
                 return response.choices[0].message.content
             except Exception as error:
                 print(f"  {model} failed: {str(error)[:80]}")
@@ -104,7 +104,8 @@ def write_briefing(articles):
         "role": "user",
         "content": "Write a short weekly cybersecurity briefing for beginners using these news "
                    "summaries. Group them by category, start with the most serious threats, and "
-                   "end with 3 safety tips.\n\n" + summaries_text(articles),
+                   "end with 3 safety tips. Today's date is " + datetime.now().strftime("%d %B %Y") +
+"; use it if you mention a date, and don't invent any other dates.\n\n" + summaries_text(articles),
     }])
 
 
