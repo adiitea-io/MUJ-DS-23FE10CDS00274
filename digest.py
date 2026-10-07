@@ -40,7 +40,7 @@ def fetch_articles():
     articles = []
     for source, url in FEEDS.items():
         feed = feedparser.parse(url)
-        for entry in feed.entries[:5]:  # limit to 5 articles per source
+        for entry in feed.entries[:5]:  # limit to 5 articles per source to avoid overwhelming the LLM
             text = re.sub(r"<[^>]+>", " ", entry.get("summary", ""))
             text = re.sub(r"\s+", " ", text).strip()
             articles.append({
@@ -119,7 +119,7 @@ def chat_instructions(articles):
     }
 
 
-# ---- Terminal version (runs only when you type: python digest.py) ----
+# ---- Terminal version (runs only when you type: python digest.py) using it for finding errors ----
 if __name__ == "__main__":
     articles = remove_duplicates(fetch_articles())
     print("Unique articles:", len(articles))
