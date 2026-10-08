@@ -1,5 +1,3 @@
-# Security News Digest - web app
-# Run with:  streamlit run app.py
 
 import html
 from datetime import datetime
@@ -9,9 +7,7 @@ import digest
 
 st.set_page_config(page_title="Security News Digest", page_icon="🛡️", layout="centered")
 
-# ---------------------------------------------------------------------
-# Look and feel: warm neon city at night (amber, orange, pink, a touch of cyan)
-# ---------------------------------------------------------------------
+
 CATEGORY_COLORS = {
     "Ransomware": "#FF4F8B",
     "Vulnerability": "#FF7A2E",
@@ -89,9 +85,9 @@ button[data-baseweb="tab"] p { font-family: 'Chakra Petch', sans-serif; font-siz
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------
+
 # Header
-# ---------------------------------------------------------------------
+
 st.markdown('<div class="hero-title">Security News Digest</div><div class="trace"></div>',
             unsafe_allow_html=True)
 st.markdown('<p class="lede">This week\'s cybersecurity news, collected from trusted '
@@ -99,9 +95,9 @@ st.markdown('<p class="lede">This week\'s cybersecurity news, collected from tru
             'or ask questions.</p>', unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------------------
+
 # Building the briefing
-# ---------------------------------------------------------------------
+
 def build_briefing():
     with st.status("Building this week's briefing...", expanded=True) as status:
         st.write("Collecting news from 3 sources")
@@ -145,9 +141,9 @@ st.markdown(f'<p class="meta">{len(articles)} stories from {sources} sources, '
 
 briefing_tab, stories_tab, ask_tab = st.tabs(["Briefing", "Stories", "Ask"])
 
-# ---------------------------------------------------------------------
+
 # Tab 1: the briefing
-# ---------------------------------------------------------------------
+
 with briefing_tab:
     st.markdown(st.session_state.briefing)
     st.write("")
@@ -155,9 +151,9 @@ with briefing_tab:
         build_briefing()
         st.rerun()
 
-# ---------------------------------------------------------------------
+
 # Tab 2: every story, filterable by category
-# ---------------------------------------------------------------------
+
 with stories_tab:
     found = [c for c in CATEGORY_COLORS if any(a["category"] == c for a in articles)]
     choice = st.radio("Show", ["All"] + found, horizontal=True, label_visibility="collapsed")
@@ -174,9 +170,9 @@ with stories_tab:
   <div class="sum">{html.escape(a['summary'])}</div>
 </div>""", unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------
+
 # Tab 3: chat about the news
-# ---------------------------------------------------------------------
+
 with ask_tab:
     for msg in st.session_state.chat:
         with st.chat_message(msg["role"]):
