@@ -7,6 +7,7 @@ import feedparser
 from dotenv import load_dotenv
 from groq import Groq
 from datetime import datetime
+from prompts import SUMMARY_PROMPT, BRIEFING_PROMPT, CHAT_PROMPT
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -63,7 +64,7 @@ def remove_duplicates(articles):
     return [articles[i] for i in unique]
 
 
-# ---- Step 3: Categorize ----
+# ---- Step 3: Categorize ---- rule -based classification 
 def categorize(article):
     text = (article["title"] + " " + article["text"]).lower()
     for category, words in KEYWORDS.items():
@@ -87,36 +88,28 @@ def ask_llm(messages):
 
 
 def summarize(article):
-    return ask_llm([{
-        "role": "user",
-        "content": "Summarize this cybersecurity news in 2 sentences. "
-                   "Only use facts from the text.\n\n" + article["title"] + "\n" + article["text"],
-    }])
+    prompt = SUMMARY_PROMPT.format(title=article["title"], text=article["text"])
+    return ask_llm([{"role": "user", "content": prompt}])
 
 
 # ---- Step 5: Write the weekly briefing ----
-def summaries_text(articles):
+def summaries_text(articles): # gathering the already generated summaries for llm input , like a box 
     return "\n".join(f"[{a['category']}] {a['title']}: {a['summary']}" for a in articles)
 
 
 def write_briefing(articles):
-    return ask_llm([{
-        "role": "user",
-        "content": "Write a short weekly cybersecurity briefing for beginners using these news "
-                   "summaries. Group them by category, start with the most serious threats, and "
-                   "end with 3 safety tips. Today's date is " + datetime.now().strftime("%d %B %Y") +
-"; use it if you mention a date, and don't invent any other dates.\n\n" + summaries_text(articles),
-    }])
+    prompt = BRIEFING_PROMPT.format(
+        date=datetime.now().strftime("%d %B %Y"),
+        summaries=summaries_text(articles),
+    )
+    return ask_llm([{"role": "user", "content": prompt}])
+ 
 
 
 # ---- Step 6: Chat ----
 def chat_instructions(articles):
-    return {
-        "role": "system",
-        "content": "You are a friendly cybersecurity assistant for beginners. Answer questions "
-                   "using only this week's news below. If the answer is not in the news, say so. "
-                   "Keep answers short and simple.\n\n" + summaries_text(articles),
-    }
+    prompt = CHAT_PROMPT.format(summaries=summaries_text(articles))
+    return {"role": "system", "content": prompt}
 
 
 # ---- Terminal version (runs only when you type: python digest.py) using it for finding errors ----
